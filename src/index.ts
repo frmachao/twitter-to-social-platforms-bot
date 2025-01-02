@@ -4,6 +4,8 @@ import { Telegraf } from 'telegraf';
 import { Logger } from 'tslog';
 import { setTimeout } from 'timers/promises';
 import cliProgress from 'cli-progress';
+import dayjs from 'dayjs';
+
 
 config();
 
@@ -45,7 +47,7 @@ try {
 // Send a test message to Telegram
 async function sendTestMessage() {
     try {
-        await bot.telegram.sendMessage(TELEGRAM_CHAT_ID, "Bot started and connected successfully!");
+        await bot.telegram.sendMessage(TELEGRAM_CHAT_ID, "ShieldLayer Twitter Bot started and connected successfully!");
         logWithEmoji("Test message sent to Telegram", "✅");
     } catch (e) {
         logger.error(`Error sending test message: ${e}`);
@@ -60,6 +62,8 @@ async function sendTelegramMessage(message: string) {
         logger.error(`Error sending message: ${e}`);
     }
 }
+
+const API_INTERVAL =  16 * 60 * 1000; // 默认 16 分钟间隔
 
 async function checkTweets(userId: string, lastTweetId: string | null, startTime: string) {
     try {
@@ -87,23 +91,43 @@ async function checkTweets(userId: string, lastTweetId: string | null, startTime
         logWithEmoji("Fetched tweets", "🔄");
         return lastTweetId;
     } catch (e) {
-        if ((e as any).code === 429) {
-            logWithEmoji("Rate limit exceeded. Waiting before retrying...", "⏳");
-            await setTimeout(900000); // Wait for 15 minutes
-        } else {
-            logger.error(`Error fetching tweets: ${e}`);
-            if (e instanceof Error) {
-                logger.error(`Error message: ${e.message}`);
-                logger.error(`Error stack: ${e.stack}`);
-                // Log additional error details if available
-                const errorResponse = (e as any).response;
-                if (errorResponse) {
-                    logger.error(`Error response data: ${JSON.stringify(errorResponse.data)}`);
-                    logger.error(`Error response status: ${errorResponse.status}`);
-                    logger.error(`Error response headers: ${JSON.stringify(errorResponse.headers)}`);
-                } else {
-                    logger.error(`Full error object: ${JSON.stringify(e)}`);
-                }
+        if ((e as any).status === 429 || (e as any).code === 429) {
+            const resetTime = parseInt((e as any).response?.headers?.['x-rate-limit-reset'] || 
+                                    (e as any).headers?.['x-rate-limit-reset'] || '0') * 1000;
+            
+            logWithEmoji(`resetTime: ${dayjs(resetTime).format('YYYY-MM-DD HH:mm:ss')}`, "🕒");
+
+            const timeUntilReset = resetTime - Date.now();
+            const waitTime = timeUntilReset <= 0 ? API_INTERVAL : timeUntilReset;
+            
+            logWithEmoji(`Rate limit exceeded. Waiting ${Math.ceil(waitTime/1000)} seconds... (Reset at: ${new Date(resetTime).toLocaleString()})`, "⏳");
+            
+            // 使用进度条显示等待进度
+            const progressBar = new cliProgress.SingleBar({}, cliProgress.Presets.shades_classic);
+            progressBar.start(100, 0);
+            
+            const updateInterval = waitTime / 100;
+            for (let i = 0; i <= 100; i++) {
+                await setTimeout(updateInterval);
+                progressBar.update(i);
+            }
+            
+            progressBar.stop();
+            return lastTweetId;
+        }
+        
+        // 其他错误的处理
+        logger.error(`Error fetching tweets: ${e}`);
+        if (e instanceof Error) {
+            logger.error(`Error message: ${e.message}`);
+            logger.error(`Error stack: ${e.stack}`);
+            const errorResponse = (e as any).response;
+            if (errorResponse) {
+                logger.error(`Error response data: ${JSON.stringify(errorResponse.data)}`);
+                logger.error(`Error response status: ${errorResponse.status}`);
+                logger.error(`Error response headers: ${JSON.stringify(errorResponse.headers)}`);
+            } else {
+                logger.error(`Full error object: ${JSON.stringify(e)}`);
             }
         }
     }
@@ -125,7 +149,6 @@ async function main() {
         if (e instanceof Error) {
             logger.error(`Error message: ${e.message}`);
             logger.error(`Error stack: ${e.stack}`);
-            // Log additional error details if available
             const errorResponse = (e as any).response;
             if (errorResponse) {
                 logger.error(`Error response data: ${JSON.stringify(errorResponse.data)}`);
@@ -138,49 +161,23 @@ async function main() {
         return;
     }
 
-    // Initialize lastTweetId with the latest tweet ID
     let lastTweetId: string | null = null;
     const startTime = new Date().toISOString();
-    try {
-        const lastTweetResponse = await client.tweets.usersIdTweets(userId, { max_results: 5 });
-        if (lastTweetResponse.data && lastTweetResponse.data.length > 0) {
-            lastTweetId = lastTweetResponse.data[0].id;
-            logWithEmoji("Initialized last tweet ID", "🔍");
-        } else {
-            logWithEmoji("No initial tweet found", "⚠️");
-        }
-    } catch (e) {
-        logger.error(`Error fetching initial tweets: ${e}`);
-        if (e instanceof Error) {
-            logger.error(`Error message: ${e.message}`);
-            logger.error(`Error stack: ${e.stack}`);
-            // Log additional error details if available
-            const errorResponse = (e as any).response;
-            if (errorResponse) {
-                logger.error(`Error response data: ${JSON.stringify(errorResponse.data)}`);
-                logger.error(`Error response status: ${errorResponse.status}`);
-                logger.error(`Error response headers: ${JSON.stringify(errorResponse.headers)}`);
-            } else {
-                logger.error(`Full error object: ${JSON.stringify(e)}`);
-            }
-        }
-    }
+    logWithEmoji("Starting to monitor tweets from: " + startTime, "🔍");
 
     // Send a test message when the script starts
     await sendTestMessage();
 
     while (true) {
         lastTweetId = await checkTweets(userId, lastTweetId, startTime);
-        logWithEmoji("Waiting for next fetch cycle", "⏳");
-
+        logWithEmoji("Waiting for next fetch cycle (16 minutes)", "⏳");
+        
         // Initialize the progress bar
         const progressBar = new cliProgress.SingleBar({}, cliProgress.Presets.shades_classic);
         progressBar.start(100, 0);
 
-        // Simulate the waiting period with progress bar update
-        const sleepDuration = 120000; // 100 seconds
-        const updateInterval = sleepDuration / 100; // update every 1% of the duration
-
+        // Update the progress bar
+        const updateInterval = API_INTERVAL / 100; // Update every 1% of the duration
         for (let i = 0; i <= 100; i++) {
             await setTimeout(updateInterval);
             progressBar.update(i);

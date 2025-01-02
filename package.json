@@ -4,24 +4,28 @@
   "description": "A bot to monitor Twitter and send messages to Telegram",
   "main": "dist/index.js",
   "scripts": {
-    "prebuild": "npm install --save-dev @types/node @types/dotenv @types/telegraf @types/tslog",
+    "prebuild": "npm install --save-dev @types/node @types/dotenv",
     "build": "tsc",
-    "start": "node dist/index.js"
+    "start": "node dist/index.js",
+    "pm2:start": "pm2 start ecosystem.config.js",
+    "pm2:stop": "pm2 stop ecosystem.config.js",
+    "pm2:restart": "pm2 restart ecosystem.config.js",
+    "pm2:logs": "pm2 logs twitter-telegram-bot",
+    "pm2:monitor": "pm2 monit twitter-telegram-bot"
   },
   "dependencies": {
     "cli-progress": "^3.12.0",
+    "dayjs": "^1.11.13",
     "dotenv": "^10.0.0",
     "ora": "^8.0.1",
-    "telegraf": "^4.0.0",
-    "tslog": "^3.0.0",
+    "telegraf": "^4.16.3",
+    "tslog": "^4.9.3",
     "twitter-api-sdk": "^1.0.0"
   },
   "devDependencies": {
     "@types/cli-progress": "^3.11.5",
-    "@types/node": "^20.12.13",
-    "@types/dotenv": "^8.2.0",
-    "@types/telegraf": "^4.0.0",
-    "@types/tslog": "^3.0.0",
+    "@types/dotenv": "^8.2.3",
+    "@types/node": "^20.17.11",
     "typescript": "^4.5.4"
   },
   "author": "",
