@@ -47,7 +47,11 @@ try {
 // Send a test message to Telegram
 async function sendTestMessage() {
     try {
-        await bot.telegram.sendMessage(TELEGRAM_CHAT_ID, "ShieldLayer Twitter Bot started and connected successfully!");
+        await bot.telegram.sendMessage(
+            TELEGRAM_CHAT_ID, 
+            "ShieldLayer Twitter Bot https://x.com/shieldlayer", 
+            { parse_mode: 'Markdown' }  // 启用 Markdown 解析
+        );
         logWithEmoji("Test message sent to Telegram", "✅");
     } catch (e) {
         logger.error(`Error sending test message: ${e}`);
@@ -77,7 +81,8 @@ async function checkTweets(userId: string, lastTweetId: string | null, startTime
         let newTweetsFound = false;
         if (response.data && response.data.length > 0) {
             for (const tweet of response.data.reverse()) {
-                const message = `New tweet posted by @${USER_TO_MONITOR}:\n\n${tweet.text}`;
+                const tweetUrl = `https://x.com/${USER_TO_MONITOR}/status/${tweet.id}`;
+                const message = `New tweet posted by @${USER_TO_MONITOR}:\n\n${tweetUrl}`;
                 await sendTelegramMessage(message);
                 lastTweetId = tweet.id;
                 newTweetsFound = true;
