@@ -4,6 +4,7 @@ import { showProgress } from './utils/progress';
 import { TwitterService } from './services/twitter';
 import { TelegramService } from './services/telegram';
 import { DiscordService } from './services/discord';
+import dayjs from 'dayjs';
 
 async function sendToAllPlatforms(message: string, telegramService: TelegramService, discordService: DiscordService) {
     await Promise.all([
@@ -67,7 +68,10 @@ async function main() {
                 const timeUntilReset = resetTime - Date.now();
                 const waitTime = timeUntilReset <= 0 ? config.api.interval : timeUntilReset;
                 
+                const formattedResetTime = dayjs(resetTime).format('YYYY-MM-DD HH:mm:ss');
+                logWithEmoji(`Rate limit reset time: ${formattedResetTime}`, "🕒");
                 logWithEmoji(`Rate limit exceeded. Waiting ${Math.ceil(waitTime/1000)} seconds...`, "⏳");
+                
                 await showProgress(waitTime, "Rate limit cooldown");
             } else {
                 logger.error('Error in main loop:', e);

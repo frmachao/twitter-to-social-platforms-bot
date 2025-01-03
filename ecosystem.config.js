@@ -19,6 +19,10 @@ module.exports = {
     // 合并日志
     merge_logs: true,
     // 日志日期格式
-    log_date_format: "YYYY-MM-DD HH:mm:ss"
+    log_date_format: "YYYY-MM-DD HH:mm:ss",
+    // 添加日志轮转配置
+    max_size: "10M",          // 当日志达到10MB时轮转
+    retain: "30",             // 保留30个日志文件
+    compress: true            // 压缩轮转后的日志
   }]
 } 
