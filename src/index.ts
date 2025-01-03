@@ -31,11 +31,11 @@ async function main() {
 
     // 获取要监控的用户 ID
     const userId = await twitterService.getUserId(config.twitter.userToMonitor);
-    logWithEmoji("Fetched user ID", "🆔");
+    logWithEmoji(`Fetched user ID: ${userId}`, "🆔");
 
     // 发送启动消息
-    const startupMessage = `ShieldLayer Twitter Bot Test Message:  https://x.com/${config.twitter.userToMonitor}`;
-    await sendToAllPlatforms(startupMessage, telegramService, discordService);
+    // const startupMessage = `ShieldLayer Twitter Bot Test Message:  https://x.com/${config.twitter.userToMonitor}`;
+    // await sendToAllPlatforms(startupMessage, telegramService, discordService);
 
     // 初始化监控参数
     let lastTweetId: string | null = null;
@@ -50,7 +50,7 @@ async function main() {
             if (response.data && response.data.length > 0) {
                 for (const tweet of response.data.reverse()) {
                     const tweetUrl = `https://x.com/${config.twitter.userToMonitor}/status/${tweet.id}`;
-                    const message = `New tweet posted by @${config.twitter.userToMonitor}:\n\n${tweetUrl}`;
+                    const message = `${tweetUrl}`;
                     await sendToAllPlatforms(message, telegramService, discordService);
                     lastTweetId = tweet.id;
                 }
