@@ -64,12 +64,12 @@ async function main() {
             
         } catch (e) {
             if ((e as any).status === 429 || (e as any).code === 429) {
-                const resetTime = parseInt((e as any).response?.headers?.['x-rate-limit-reset'] || '0') * 1000;
+                const resetTime = parseInt((e as any).response?.headers?.['x-rate-limit-reset'] || 
+                (e as any).headers?.['x-rate-limit-reset'] || '0') * 1000;
                 const timeUntilReset = resetTime - Date.now();
                 const waitTime = timeUntilReset <= 0 ? config.api.interval : timeUntilReset;
                 
-                const formattedResetTime = dayjs(resetTime).format('YYYY-MM-DD HH:mm:ss');
-                logWithEmoji(`Rate limit reset time: ${formattedResetTime}`, "🕒");
+                logWithEmoji(`resetTime: ${dayjs(resetTime).format('YYYY-MM-DD HH:mm:ss')}`, "🕒");
                 logWithEmoji(`Rate limit exceeded. Waiting ${Math.ceil(waitTime/1000)} seconds...`, "⏳");
                 
                 await showProgress(waitTime, "Rate limit cooldown");
