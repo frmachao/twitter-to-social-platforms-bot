@@ -13,19 +13,22 @@ type TwitterResponse = Awaited<ReturnType<Client['tweets']['usersIdTweets']>>;
 type Tweet = NonNullable<TwitterResponse['data']>[0];
 type Media = NonNullable<NonNullable<TwitterResponse['includes']>['media']>[0];
 
-async function sendToAllPlatforms(message: string, telegramService: TelegramService, discordService: DiscordService) {
-    await Promise.all([
-        telegramService.sendMessage(message),
-        discordService.sendMessage(message)
-    ]);
+async function sendToAllPlatforms(
+    message: string, 
+    services: Awaited<ReturnType<typeof initializeServices>>
+) {
+    const promises = [];
+    if (services.telegram) promises.push(services.telegram.sendMessage(message));
+    if (services.discord) promises.push(services.discord.sendMessage(message));
+    await Promise.all(promises);
 }
 
 async function handleImageTweet(
-    tweet: Tweet, 
-    tweetUrl: string, 
-    media: Media[], 
-    instagramService: InstagramService
+    tweet: Tweet,
+    media: Media[],
+    instagramService: InstagramService | null
 ) {
+    if (!instagramService) return;
     const tweetMedia = media.filter(
         media => media.type === 'photo' && 
         tweet.attachments?.media_keys?.includes(media.media_key ?? '')
@@ -34,7 +37,7 @@ async function handleImageTweet(
     if (tweetMedia.length > 0 && 'url' in tweetMedia[0]) {
         try {
             const imageUrl = tweetMedia[0].url as string;
-            const caption = `${tweet.text ?? ''}\n\nOriginally posted on Twitter: ${tweetUrl}`;
+            const caption = `${tweet.text ?? ''}`;
             
             await instagramService.postToInstagram(imageUrl, caption);
             logWithEmoji("Tweet with image synced to Instagram", "📸");
@@ -52,46 +55,103 @@ async function processTweet(
     tweet: Tweet,
     response: TwitterResponse,
     config: Config,
-    telegramService: TelegramService,
-    discordService: DiscordService,
-    instagramService: InstagramService
+    services: Awaited<ReturnType<typeof initializeServices>>
 ) {
     const tweetUrl = `https://x.com/${config.twitter.userToMonitor}/status/${tweet.id}`;
-    
-    // 发送到 Telegram 和 Discord
     const message = `${tweetUrl}`;
-    await sendToAllPlatforms(message, telegramService, discordService);
+    
+    await sendToAllPlatforms(message, services);
 
-    // 检查并处理带图片的推文
     if (response.includes?.media) {
-        await handleImageTweet(tweet, tweetUrl, response.includes.media, instagramService);
+        await handleImageTweet(tweet,response.includes.media, services.instagram);
     }
 
     return tweet.id;
 }
 
+async function initializeServices(config: Config) {
+    const services = {
+        twitter: null as TwitterService | null,
+        telegram: null as TelegramService | null,
+        discord: null as DiscordService | null,
+        instagram: null as InstagramService | null
+    };
+
+    // Twitter 服务是必需的
+    if (!config.twitter.bearerToken) {
+        throw new Error('Twitter bearer token is required');
+    }
+    services.twitter = new TwitterService(config.twitter.bearerToken, logger);
+
+    // Telegram 服务
+    if (config.telegram.botToken && config.telegram.chatId) {
+        services.telegram = new TelegramService(config.telegram.botToken, config.telegram.chatId, logger);
+    } else {
+        logWithEmoji('Telegram service not configured, skipping initialization', '⚠️');
+    }
+
+    // Discord 服务
+    if (config.discord.botToken && config.discord.channelId) {
+        services.discord = new DiscordService(config.discord.botToken, config.discord.channelId, logger);
+    } else {
+        logWithEmoji('Discord service not configured, skipping initialization', '⚠️');
+    }
+
+    // Instagram 服务
+    if (
+        config.instagram.accessToken && 
+        config.instagram.businessAccountId &&
+        config.instagram.appId &&
+        config.instagram.appSecret
+    ) {
+        services.instagram = new InstagramService(
+            config.instagram.accessToken, 
+            config.instagram.businessAccountId, 
+            logger
+        );
+    } else {
+        logWithEmoji('Instagram service not configured, skipping initialization', '⚠️');
+    }
+
+    // 初始化已配置的服务
+    const initPromises = Object.values(services)
+        .filter(service => service !== null)
+        .map(service => service!.init());
+    
+    await Promise.all(initPromises);
+
+    return services;
+}
+
+let instagramService: InstagramService | null = null;
+
+process.on('SIGINT', async () => {
+    logger.info('Shutting down...');
+    if (instagramService) {
+        await instagramService.cleanup();
+    }
+    process.exit(0);
+});
+
+process.on('SIGTERM', async () => {
+    logger.info('Shutting down...');
+    if (instagramService) {
+        await instagramService.cleanup();
+    }
+    process.exit(0);
+});
+
 async function main() {
     // 加载和验证配置
     const config = validateConfig(logger);
     
-    // 初始化服务
-    const twitterService = new TwitterService(config.twitter.bearerToken, logger);
-    const telegramService = new TelegramService(config.telegram.botToken, config.telegram.chatId, logger);
-    const discordService = new DiscordService(config.discord.botToken, config.discord.channelId, logger);
-    const instagramService = new InstagramService(config.instagram.accessToken, config.instagram.businessAccountId, logger);
-
-    // 初始化所有服务
-    await Promise.all([
-        twitterService.init(),
-        telegramService.init(),
-        discordService.init(),
-        instagramService.init()
-    ]);
-
+    // 按需初始化服务
+    const services = await initializeServices(config);
+    instagramService = services.instagram;  // 保存引用
+    
     // 获取要监控的用户 ID
-    const userId = await twitterService.getUserId(config.twitter.userToMonitor);
+    const userId = await services.twitter!.getUserId(config.twitter.userToMonitor);
     logWithEmoji(`Fetched user ID: ${userId}`, "🆔");
-
 
     // 初始化监控参数
     let lastTweetId: string | null = null;
@@ -101,7 +161,7 @@ async function main() {
     // 主循环
     while (true) {
         try {
-            const response = await twitterService.getTweets(userId, lastTweetId, startTime);
+            const response = await services.twitter!.getTweets(userId, lastTweetId, startTime);
             
             if (response.data && response.data.length > 0) {
                 for (const tweet of response.data.reverse()) {
@@ -109,9 +169,7 @@ async function main() {
                         tweet,
                         response,
                         config,
-                        telegramService,
-                        discordService,
-                        instagramService
+                        services
                     );
                 }
                 logWithEmoji("New tweets found and processed", "✅");
@@ -139,19 +197,6 @@ async function main() {
             }
         }
     }
-
-    // 在 main 函数中添加错误处理和清理
-    process.on('SIGINT', async () => {
-        logger.info('Shutting down...');
-        await instagramService.cleanup();
-        process.exit(0);
-    });
-
-    process.on('SIGTERM', async () => {
-        logger.info('Shutting down...');
-        await instagramService.cleanup();
-        process.exit(0);
-    });
 }
 
 main().catch(e => logger.error('Fatal error:', e));

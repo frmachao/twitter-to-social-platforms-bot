@@ -19,6 +19,8 @@ export interface Config {
     instagram: {
         accessToken: string;
         businessAccountId: string;
+        appId: string;
+        appSecret: string;
     };
     api: {
         interval: number;
@@ -58,7 +60,9 @@ export function validateConfig(logger: Logger<ILogObj>): Config {
         },
         instagram: {
             accessToken: process.env.INSTAGRAM_ACCESS_TOKEN!,
-            businessAccountId: process.env.INSTAGRAM_BUSINESS_ACCOUNT_ID!
+            businessAccountId: process.env.INSTAGRAM_BUSINESS_ACCOUNT_ID!,
+            appId: process.env.INSTAGRAM_APP_ID!,
+            appSecret: process.env.INSTAGRAM_APP_SECRET!
         },
         api: {
             interval: 16 * 60 * 1000 // 16 minutes in milliseconds
