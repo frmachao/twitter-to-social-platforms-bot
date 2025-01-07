@@ -34,7 +34,8 @@ export class TwitterService {
             since_id: lastTweetId || undefined,
             max_results: 5,
             'tweet.fields': ['id', 'text', 'author_id', 'created_at'],
-            expansions: ['author_id'],
+            'media.fields': ['url', 'preview_image_url', 'type'],
+            'expansions': ['author_id', 'attachments.media_keys'],
             start_time: startTime
         });
     }
