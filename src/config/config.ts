@@ -16,6 +16,10 @@ export interface Config {
         botToken: string;
         channelId: string;
     };
+    instagram: {
+        accessToken: string;
+        businessAccountId: string;
+    };
     api: {
         interval: number;
     };
@@ -28,6 +32,8 @@ export function validateConfig(logger: Logger<ILogObj>): Config {
         'TELEGRAM_CHAT_ID',
         'DISCORD_BOT_TOKEN',
         'DISCORD_CHANNEL_ID',
+        'INSTAGRAM_ACCESS_TOKEN',
+        'INSTAGRAM_BUSINESS_ACCOUNT_ID',
         'USER_TO_MONITOR'
     ];
 
@@ -49,6 +55,10 @@ export function validateConfig(logger: Logger<ILogObj>): Config {
         discord: {
             botToken: process.env.DISCORD_BOT_TOKEN!,
             channelId: process.env.DISCORD_CHANNEL_ID!
+        },
+        instagram: {
+            accessToken: process.env.INSTAGRAM_ACCESS_TOKEN!,
+            businessAccountId: process.env.INSTAGRAM_BUSINESS_ACCOUNT_ID!
         },
         api: {
             interval: 16 * 60 * 1000 // 16 minutes in milliseconds
