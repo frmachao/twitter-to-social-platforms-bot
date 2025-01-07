@@ -2,6 +2,26 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.2] - 2024-01-06
+
+### Added
+- Instagram integration for tweets with images
+- Automatic Instagram token refresh mechanism
+- Token expiry monitoring and management
+- Support for cross-posting images to Instagram Business Account
+- Graceful shutdown handling for services
+
+### Changed
+- Improved error handling for all platforms
+- Enhanced type definitions for Twitter API responses
+- Refactored tweet processing logic for better modularity
+- Updated environment variables documentation
+
+### Fixed
+- Rate limiting handling for multiple platforms
+- Process cleanup on PM2 restart
+- Type safety improvements in Twitter service
+
 ## [1.0.1] - 2024-01-02
 
 ### Added
