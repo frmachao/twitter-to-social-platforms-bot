@@ -88,5 +88,4 @@ Built with:
 - [PM2](https://pm2.keymetrics.io/)
 
 
-Created & Managed by Ricky Bharti
 
