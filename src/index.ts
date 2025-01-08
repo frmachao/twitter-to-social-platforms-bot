@@ -5,6 +5,7 @@ import { TwitterService } from './services/twitter';
 import { TelegramService } from './services/telegram';
 import { DiscordService } from './services/discord';
 import { InstagramService } from './services/instagram';
+import { RedditService } from './services/reddit';
 import dayjs from 'dayjs';
 import { Client } from 'twitter-api-sdk';
 import { Config } from './config/config';
@@ -15,37 +16,44 @@ type Media = NonNullable<NonNullable<TwitterResponse['includes']>['media']>[0];
 
 async function sendToAllPlatforms(
     message: string, 
+    tweet: Tweet,
+    tweetUrl: string,
     services: Awaited<ReturnType<typeof initializeServices>>
 ) {
     const promises = [];
     if (services.telegram) promises.push(services.telegram.sendMessage(message));
     if (services.discord) promises.push(services.discord.sendMessage(message));
+    if (services.reddit) promises.push(services.reddit.submitPost(tweet.text ?? '', tweetUrl));
     await Promise.all(promises);
 }
 
 async function handleImageTweet(
     tweet: Tweet,
     media: Media[],
-    instagramService: InstagramService | null
+    services: {
+        instagram: InstagramService | null
+    }
 ) {
-    if (!instagramService) return;
     const tweetMedia = media.filter(
         media => media.type === 'photo' && 
         tweet.attachments?.media_keys?.includes(media.media_key ?? '')
     );
 
     if (tweetMedia.length > 0 && 'url' in tweetMedia[0]) {
-        try {
-            const imageUrl = tweetMedia[0].url as string;
-            const caption = `${tweet.text ?? ''}`;
-            
-            await instagramService.postToInstagram(imageUrl, caption);
-            logWithEmoji("Tweet with image synced to Instagram", "📸");
-        } catch (error: unknown) {
-            if ((error as any).response?.status === 429) {
-                logWithEmoji("Instagram rate limit reached, will retry in next cycle", "⏳");
-            } else {
-                logger.error("Error posting to Instagram:", error);
+        const imageUrl = tweetMedia[0].url as string;
+        const caption = `${tweet.text ?? ''}`;
+
+        // 发送到 Instagram
+        if (services.instagram) {
+            try {
+                await services.instagram.postToInstagram(imageUrl, caption);
+                logWithEmoji("Tweet with image synced to Instagram", "📸");
+            } catch (error: unknown) {
+                if ((error as any).response?.status === 429) {
+                    logWithEmoji("Instagram rate limit reached, will retry in next cycle", "⏳");
+                } else {
+                    logger.error("Error posting to Instagram:", error);
+                }
             }
         }
     }
@@ -60,10 +68,10 @@ async function processTweet(
     const tweetUrl = `https://x.com/${config.twitter.userToMonitor}/status/${tweet.id}`;
     const message = `${tweetUrl}`;
     
-    await sendToAllPlatforms(message, services);
+    await sendToAllPlatforms(message, tweet, tweetUrl, services);
 
     if (response.includes?.media) {
-        await handleImageTweet(tweet,response.includes.media, services.instagram);
+        await handleImageTweet(tweet, response.includes.media, { instagram: services.instagram });
     }
 
     return tweet.id;
@@ -74,7 +82,8 @@ async function initializeServices(config: Config) {
         twitter: null as TwitterService | null,
         telegram: null as TelegramService | null,
         discord: null as DiscordService | null,
-        instagram: null as InstagramService | null
+        instagram: null as InstagramService | null,
+        reddit: null as RedditService | null
     };
 
     // Twitter 服务是必需的
@@ -113,6 +122,26 @@ async function initializeServices(config: Config) {
         logWithEmoji('Instagram service not configured, skipping initialization', '⚠️');
     }
 
+    // Reddit 服务
+    if (
+        config.reddit.clientId &&
+        config.reddit.clientSecret &&
+        config.reddit.username &&
+        config.reddit.password &&
+        config.reddit.subreddit
+    ) {
+        services.reddit = new RedditService(
+            config.reddit.clientId,
+            config.reddit.clientSecret,
+            config.reddit.username,
+            config.reddit.password,
+            config.reddit.subreddit,
+            logger
+        );
+    } else {
+        logWithEmoji('Reddit service not configured, skipping initialization', '⚠️');
+    }
+
     // 初始化已配置的服务
     const initPromises = Object.values(services)
         .filter(service => service !== null)
@@ -124,20 +153,19 @@ async function initializeServices(config: Config) {
 }
 
 let instagramService: InstagramService | null = null;
+let redditService: RedditService | null = null;
 
 process.on('SIGINT', async () => {
     logger.info('Shutting down...');
-    if (instagramService) {
-        await instagramService.cleanup();
-    }
+    if (instagramService) await instagramService.cleanup();
+    if (redditService) await redditService.cleanup();
     process.exit(0);
 });
 
 process.on('SIGTERM', async () => {
     logger.info('Shutting down...');
-    if (instagramService) {
-        await instagramService.cleanup();
-    }
+    if (instagramService) await instagramService.cleanup();
+    if (redditService) await redditService.cleanup();
     process.exit(0);
 });
 
@@ -147,7 +175,8 @@ async function main() {
     
     // 按需初始化服务
     const services = await initializeServices(config);
-    instagramService = services.instagram;  // 保存引用
+    instagramService = services.instagram;
+    redditService = services.reddit;  
     
     // 获取要监控的用户 ID
     const userId = await services.twitter!.getUserId(config.twitter.userToMonitor);

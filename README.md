@@ -1,59 +1,52 @@
 # Twitter to Social Platforms Bot
 
-## Overview
-
-This bot monitors a specific Twitter user's tweets and forwards them in real-time to multiple social platforms:
-- Telegram channels
-- Discord channels
-- Instagram (for tweets with images)
-
-Built with TypeScript and Node.js, it utilizes:
-- Twitter API v2
-- Telegram Bot API
-- Discord.js
-- Instagram Graph API
+A bot that monitors Twitter and forwards posts to multiple social platforms.
 
 ## Features
 
-- **Multi-Platform Support:** 
-  - Forwards tweets to Telegram channels
-  - Forwards tweets to Discord channels
-  - Syncs tweets with images to Instagram
-- **Real-Time Monitoring:** Continuously monitors tweets from a specified Twitter user
-- **Smart Media Handling:** 
-  - Detects tweets containing images
-  - Automatically posts images to Instagram with original tweet link
-- **Token Management:**
-  - Automatic Instagram token refresh
-  - Token expiry monitoring
-  - Graceful token updates
-- **Rate Limit Handling:** Smart handling of API rate limits for all platforms
-- **Process Management:** Uses PM2 for process management and monitoring
-- **Robust Logging:** Comprehensive logging system using tslog
-- **Progress Visualization:** CLI progress bar for monitoring wait times
+- Monitor specific Twitter user's tweets
+- Forward tweets to:
+  - Telegram channels
+  - Discord channels
+  - Instagram (for tweets with images)
+  - Reddit subreddits
+- Automatic token refresh for Instagram and Reddit
+- Rate limit handling
+- PM2 process management
 
 ## Configuration
 
+The bot supports modular platform configuration. You can enable only the platforms you need by configuring their respective environment variables.
+
 Required environment variables:
 ```env
-# Twitter Configuration
+# Twitter Configuration (Required)
 TWITTER_BEARER_TOKEN=your_twitter_token
 USER_TO_MONITOR=target_username
 
-# Telegram Configuration
+# Telegram Configuration (Optional)
 TELEGRAM_BOT_TOKEN=your_telegram_bot_token
 TELEGRAM_CHAT_ID=your_chat_id
 
-# Discord Configuration
+# Discord Configuration (Optional)
 DISCORD_BOT_TOKEN=your_discord_token
 DISCORD_CHANNEL_ID=your_channel_id
 
-# Instagram Configuration
+# Instagram Configuration (Optional)
 INSTAGRAM_BUSINESS_ACCOUNT_ID=your_business_account_id
 INSTAGRAM_ACCESS_TOKEN=your_access_token
 INSTAGRAM_APP_ID=your_app_id
 INSTAGRAM_APP_SECRET=your_app_secret
+
+# Reddit Configuration (Optional)
+REDDIT_CLIENT_ID=your_client_id
+REDDIT_CLIENT_SECRET=your_client_secret
+REDDIT_USERNAME=your_username
+REDDIT_PASSWORD=your_password
+REDDIT_SUBREDDIT=target_subreddit
 ```
+
+Note: Only Twitter configuration is required. Other platforms are optional and will be enabled only if their configuration is provided.
 
 ## Installation & Setup
 

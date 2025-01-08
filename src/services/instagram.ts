@@ -1,5 +1,6 @@
 import { Logger, ILogObj } from 'tslog';
 import axios from 'axios';
+import { ServiceError } from '../utils/errors';
 
 export class InstagramService {
     private accessToken: string;
@@ -16,10 +17,25 @@ export class InstagramService {
         this.logger = logger;
     }
 
+    private formatError(error: unknown): string {
+        if (axios.isAxiosError(error)) {
+            return `API Error: ${error.message} - ${JSON.stringify(error.response?.data || {}, null, 2)}`;
+        }
+        return error instanceof Error ? error.message : String(error);
+    }
+
+    private wrapError(e: unknown, operation: string): ServiceError {
+        const errorMessage = this.formatError(e);
+        return new ServiceError(
+            `Instagram ${operation} failed: ${errorMessage}`,
+            'Instagram',
+            e
+        );
+    }
+
     async init() {
         try {
             await this.checkAndRefreshToken();
-            // 启动定期检查
             this.startTokenCheck();
             
             const response = await axios.get(
@@ -27,8 +43,9 @@ export class InstagramService {
             );
             this.logger.info('📸 Connected to Instagram');
         } catch (e) {
-            this.logger.error('Error connecting to Instagram:', e);
-            throw e;
+            const error = this.wrapError(e, 'initialization');
+            this.logger.error(error.message);
+            throw error;
         }
     }
 
@@ -106,8 +123,9 @@ export class InstagramService {
 
             this.logger.info('📤 Content posted to Instagram');
         } catch (e) {
-            this.logger.error('Error posting to Instagram:', e);
-            throw e;
+            const error = this.wrapError(e, 'post');
+            this.logger.error(error.message);
+            throw error;
         }
     }
 
@@ -127,8 +145,9 @@ export class InstagramService {
             this.accessToken = response.data.access_token;
             this.logger.info('🔄 Instagram token refreshed');
         } catch (e) {
-            this.logger.error('Error refreshing Instagram token:', e);
-            throw e;
+            const error = this.wrapError(e, 'token refresh');
+            this.logger.error(error.message);
+            throw error;
         }
     }
 } 
