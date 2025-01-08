@@ -1,7 +1,7 @@
 {
   "name": "twitter-to-social-platforms-bot",
   "version": "1.0.3",
-  "description": "A bot to monitor Twitter and send messages to Telegram, Discord",
+  "description": "A bot to monitor Twitter and send messages to Social Platforms",
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",
