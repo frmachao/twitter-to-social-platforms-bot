@@ -22,6 +22,13 @@ export interface Config {
         appId: string;
         appSecret: string;
     };
+    reddit: {
+        clientId: string;
+        clientSecret: string;
+        username: string;
+        password: string;
+        subreddit: string;
+    };
     api: {
         interval: number;
     };
@@ -36,7 +43,12 @@ export function validateConfig(logger: Logger<ILogObj>): Config {
         'DISCORD_CHANNEL_ID',
         'INSTAGRAM_ACCESS_TOKEN',
         'INSTAGRAM_BUSINESS_ACCOUNT_ID',
-        'USER_TO_MONITOR'
+        'USER_TO_MONITOR',
+        'REDDIT_CLIENT_ID',
+        'REDDIT_CLIENT_SECRET',
+        'REDDIT_USERNAME',
+        'REDDIT_PASSWORD',
+        'REDDIT_SUBREDDIT'
     ];
 
     for (const envVar of requiredEnvVars) {
@@ -63,6 +75,13 @@ export function validateConfig(logger: Logger<ILogObj>): Config {
             businessAccountId: process.env.INSTAGRAM_BUSINESS_ACCOUNT_ID!,
             appId: process.env.INSTAGRAM_APP_ID!,
             appSecret: process.env.INSTAGRAM_APP_SECRET!
+        },
+        reddit: {
+            clientId: process.env.REDDIT_CLIENT_ID!,
+            clientSecret: process.env.REDDIT_CLIENT_SECRET!,
+            username: process.env.REDDIT_USERNAME!,
+            password: process.env.REDDIT_PASSWORD!,
+            subreddit: process.env.REDDIT_SUBREDDIT!
         },
         api: {
             interval: 16 * 60 * 1000 // 16 minutes in milliseconds
