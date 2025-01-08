@@ -2,7 +2,24 @@
 
 All notable changes to this project will be documented in this file.
 
-## [1.0.2] - 2024-01-06
+## [1.0.3] - 2025-01-08
+
+### Added
+- Add Reddit service with OAuth authentication
+- Implement token refresh mechanism
+- Add error handling with ServiceError class
+- Create test files for Reddit and Instagram services
+- Update error handling in Instagram service
+
+### Changed
+- New environment variables required for Reddit:
+  - REDDIT_CLIENT_ID
+  - REDDIT_CLIENT_SECRET
+  - REDDIT_USERNAME
+  - REDDIT_PASSWORD
+  - REDDIT_SUBREDDIT
+
+## [1.0.2] - 2025-01-06
 
 ### Added
 - Instagram integration for tweets with images
@@ -22,7 +39,7 @@ All notable changes to this project will be documented in this file.
 - Process cleanup on PM2 restart
 - Type safety improvements in Twitter service
 
-## [1.0.1] - 2024-01-02
+## [1.0.1] - 2025-01-02
 
 ### Added
 - Discord integration support
@@ -44,12 +61,3 @@ All notable changes to this project will be documented in this file.
 - Added Discord.js integration
 - Updated dependencies
 - Added PM2 ecosystem configuration
-
-## [1.0.0] - 2024-01-01
-
-### Added
-- Initial release
-- Twitter to Telegram forwarding
-- Basic rate limit handling
-- Environment variable configuration
-- Simple logging system 
