@@ -17,17 +17,17 @@ export interface Config {
         channelId: string;
     };
     instagram: {
-        accessToken: string;
-        businessAccountId: string;
-        appId: string;
-        appSecret: string;
+        accessToken: string | null;
+        businessAccountId: string | null;
+        appId: string | null;
+        appSecret: string | null;
     };
     reddit: {
-        clientId: string;
-        clientSecret: string;
-        username: string;
-        password: string;
-        subreddit: string;
+        clientId: string | null;
+        clientSecret: string | null;
+        username: string | null;
+        password: string | null;
+        subreddit: string | null;
     };
     api: {
         interval: number;
@@ -41,14 +41,7 @@ export function validateConfig(logger: Logger<ILogObj>): Config {
         'TELEGRAM_CHAT_ID',
         'DISCORD_BOT_TOKEN',
         'DISCORD_CHANNEL_ID',
-        'INSTAGRAM_ACCESS_TOKEN',
-        'INSTAGRAM_BUSINESS_ACCOUNT_ID',
-        'USER_TO_MONITOR',
-        'REDDIT_CLIENT_ID',
-        'REDDIT_CLIENT_SECRET',
-        'REDDIT_USERNAME',
-        'REDDIT_PASSWORD',
-        'REDDIT_SUBREDDIT'
+        'USER_TO_MONITOR'
     ];
 
     for (const envVar of requiredEnvVars) {
@@ -71,17 +64,17 @@ export function validateConfig(logger: Logger<ILogObj>): Config {
             channelId: process.env.DISCORD_CHANNEL_ID!
         },
         instagram: {
-            accessToken: process.env.INSTAGRAM_ACCESS_TOKEN!,
-            businessAccountId: process.env.INSTAGRAM_BUSINESS_ACCOUNT_ID!,
-            appId: process.env.INSTAGRAM_APP_ID!,
-            appSecret: process.env.INSTAGRAM_APP_SECRET!
+            accessToken: process.env.INSTAGRAM_ACCESS_TOKEN || null,
+            businessAccountId: process.env.INSTAGRAM_BUSINESS_ACCOUNT_ID || null,
+            appId: process.env.INSTAGRAM_APP_ID || null,
+            appSecret: process.env.INSTAGRAM_APP_SECRET || null
         },
         reddit: {
-            clientId: process.env.REDDIT_CLIENT_ID!,
-            clientSecret: process.env.REDDIT_CLIENT_SECRET!,
-            username: process.env.REDDIT_USERNAME!,
-            password: process.env.REDDIT_PASSWORD!,
-            subreddit: process.env.REDDIT_SUBREDDIT!
+            clientId: process.env.REDDIT_CLIENT_ID || null,
+            clientSecret: process.env.REDDIT_CLIENT_SECRET || null,
+            username: process.env.REDDIT_USERNAME || null,
+            password: process.env.REDDIT_PASSWORD || null,
+            subreddit: process.env.REDDIT_SUBREDDIT || null
         },
         api: {
             interval: 16 * 60 * 1000 // 16 minutes in milliseconds

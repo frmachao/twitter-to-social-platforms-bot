@@ -106,7 +106,7 @@ async function initializeServices(config: Config) {
         logWithEmoji('Discord service not configured, skipping initialization', '⚠️');
     }
 
-    // Instagram 服务
+    // Instagram 服务是可选的
     if (
         config.instagram.accessToken && 
         config.instagram.businessAccountId &&
@@ -122,7 +122,7 @@ async function initializeServices(config: Config) {
         logWithEmoji('Instagram service not configured, skipping initialization', '⚠️');
     }
 
-    // Reddit 服务
+    // Reddit 服务也是可选的
     if (
         config.reddit.clientId &&
         config.reddit.clientSecret &&

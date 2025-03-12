@@ -6,6 +6,7 @@
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js",
+    "dev": "ts-node src/index.ts",
     "test:reddit": "ts-node src/tests/reddit.test.ts",
     "test:instagram": "ts-node src/tests/instagram.test.ts"
   },
