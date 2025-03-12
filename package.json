@@ -7,12 +7,7 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "test:reddit": "ts-node src/tests/reddit.test.ts",
-    "test:instagram": "ts-node src/tests/instagram.test.ts",
-    "pm2:start": "pm2 start ecosystem.config.js",
-    "pm2:stop": "pm2 stop ecosystem.config.js",
-    "pm2:restart": "pm2 restart ecosystem.config.js",
-    "pm2:logs": "pm2 logs twitter-telegram-bot",
-    "pm2:monitor": "pm2 monit twitter-telegram-bot"
+    "test:instagram": "ts-node src/tests/instagram.test.ts"
   },
   "dependencies": {
     "axios": "^1.7.9",
@@ -34,5 +29,6 @@
     "typescript": "~5.0.4"
   },
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "packageManager": "yarn@1.22.19+sha1.4ba7fc5c6e704fce2066ecbfb0b0d8976fe62447"
 }
